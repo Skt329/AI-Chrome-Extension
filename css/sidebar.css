@@ -487,54 +487,6 @@ input:checked + .slider:before {
   font-size: 12px;
 }
 
-/* Form Fill Panel Styles */
-#form-fill-panel .form-fill-container {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  overflow-y: auto;
-  height: 100%;
-}
-
-.form-item {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  cursor: pointer;
-}
-
-.form-item:hover {
-  background-color: #f0f0f0;
-}
-
-.form-data-input {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-#form-data {
-  width: 100%;
-  height: 100px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: inherit;
-  resize: none;
-}
-
-#fill-form-btn {
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 10px;
-  font-size: 14px;
-  cursor: pointer;
-  align-self: flex-start;
-}
-
 /* Footer Styles */
 .footer {
   background-color: var(--card-bg);

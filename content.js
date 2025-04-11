@@ -148,46 +148,6 @@ function extractPageContent() {
       console.log('[Content] Content was truncated to limit');
     }
   
-  // Identify form elements for potential form filling
-  console.log('[Content] Identifying forms on the page');
-  const forms = [];
-  const formElements = document.querySelectorAll('form');
-  console.log('[Content] Found', formElements.length, 'forms on the page');
-  
-  formElements.forEach((form, formIndex) => {
-    console.log('[Content] Analyzing form', formIndex + 1, form.id ? `(id: ${form.id})` : '');
-    
-    const formData = {
-      id: form.id || `form-${formIndex}`,
-      inputs: []
-    };
-    
-    const inputElements = form.querySelectorAll('input, select, textarea');
-    console.log('[Content] Form has', inputElements.length, 'input elements');
-    
-    inputElements.forEach((input, inputIndex) => {
-      const inputType = input.type || input.tagName.toLowerCase();
-      const inputId = input.id;
-      const inputName = input.name;
-      const inputLabel = getInputLabel(input);
-      
-      console.log('[Content] Input', inputIndex + 1, ':', inputType, 
-        inputId ? `(id: ${inputId})` : '', 
-        inputName ? `(name: ${inputName})` : '',
-        inputLabel ? `(label: ${inputLabel})` : '');
-      
-      formData.inputs.push({
-        type: inputType,
-        id: inputId,
-        name: inputName,
-        placeholder: input.placeholder,
-        label: inputLabel
-      });
-    });
-    
-    forms.push(formData);
-  });
-  
   // Return structured page data
   const pageData = {
     url: window.location.href,
@@ -195,7 +155,6 @@ function extractPageContent() {
     metaDescription: metaDescription,
     metaKeywords: metaKeywords,
     content: mainContent,
-    forms: forms,
     timestamp: new Date().toISOString()
   };
   

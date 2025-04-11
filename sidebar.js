@@ -30,14 +30,10 @@ function setTheme(isDarkMode) {
 
 // DOM elements
 const chatPanel = document.getElementById('chat-panel');
-const formFillPanel = document.getElementById('form-fill-panel');
 const settingsPanel = document.getElementById('settings-panel');
 const chatMessages = document.getElementById('chat-messages');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
-const formsList = document.getElementById('forms-list');
-const formData = document.getElementById('form-data');
-const fillFormBtn = document.getElementById('fill-form-btn');
 const connectionStatus = document.getElementById('connection-status');
 const modeBtns = document.querySelectorAll('.mode-btn');
 const closeSidebarBtn = document.getElementById('close-sidebar-btn');
@@ -66,7 +62,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Log which DOM elements we're trying to find
     console.log('[Sidebar] Checking for UI elements:');
     console.log('  - chatPanel:', !!document.getElementById('chat-panel'));
-    console.log('  - formFillPanel:', !!document.getElementById('form-fill-panel'));
     console.log('  - settingsPanel:', !!document.getElementById('settings-panel'));
     console.log('  - closeSidebarBtn:', !!document.getElementById('close-sidebar-btn'));
     console.log('  - modeBtns:', document.querySelectorAll('.mode-btn').length);
@@ -135,9 +130,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (data.sidebarMode === 'settings') {
           console.log('[Sidebar] Opening settings panel');
           switchToMode('settings');
-        } else if (data.sidebarMode === 'form') {
-          console.log('[Sidebar] Opening form fill panel');
-          switchToMode('form');
         } else {
           // Default to chat mode
           switchToMode('chat');
@@ -149,14 +141,6 @@ document.addEventListener('DOMContentLoaded', async function() {
           noticeEl.className = 'context-notice';
           noticeEl.innerHTML = `<i>Context from <b>${pageData.title}</b> is available for questions</i>`;
           document.querySelector('.messages-container').appendChild(noticeEl);
-        }
-        
-        // Populate the forms panel if we have form data
-        if (pageData.forms && pageData.forms.length > 0) {
-          console.log('[Sidebar] Populating forms panel with', pageData.forms.length, 'forms');
-          populateFormsPanel(pageData.forms);
-        } else {
-          console.log('[Sidebar] No form data available on this page');
         }
       } else {
         console.log('[Sidebar] No page data available, defaulting to chat mode');
@@ -531,24 +515,13 @@ function setupEventListeners() {
       });
     }
     
-    // Fill form button
-    const fillFormBtnElement = document.getElementById('fill-form-btn');
-    if (!fillFormBtnElement) {
-      console.error('[Sidebar] Fill form button not found');
-    } else {
-      fillFormBtnElement.addEventListener('click', function() {
-        console.log('[Sidebar] Fill form button clicked');
-        handleFormFill();
-      });
-    }
-    
     console.log('[Sidebar] Event listeners set up successfully');
   } catch (error) {
     console.error('[Sidebar] Error setting up event listeners:', error);
   }
 }
 
-// Switch between different panels (chat, form-fill, settings)
+// Switch between different panels (chat, settings)
 function switchToMode(mode) {
   // Update mode buttons
   modeBtns.forEach(btn => {
@@ -567,9 +540,6 @@ function switchToMode(mode) {
   switch (mode) {
     case 'chat':
       chatPanel.classList.add('active');
-      break;
-    case 'form':
-      formFillPanel.classList.add('active');
       break;
     case 'settings':
       settingsPanel.classList.add('active');
@@ -964,211 +934,4 @@ function addLoadingAnimationStyle() {
     document.head.appendChild(style);
     console.log('[Sidebar] Added loading animation style');
   }
-}
-
-// Populate the forms panel with detected forms
-function populateFormsPanel(forms) {
-  if (!forms || forms.length === 0) {
-    formsList.innerHTML = '<div class="no-forms">No forms detected on this page</div>';
-    return;
-  }
-  
-  formsList.innerHTML = '';
-  
-  forms.forEach((form, index) => {
-    const formItem = document.createElement('div');
-    formItem.classList.add('form-item');
-    formItem.dataset.formIndex = index;
-    
-    const title = document.createElement('h3');
-    title.textContent = `Form ${index + 1}: ${form.id}`;
-    
-    const inputsList = document.createElement('ul');
-    inputsList.classList.add('inputs-list');
-    
-    form.inputs.forEach(input => {
-      const inputItem = document.createElement('li');
-      inputItem.textContent = `${input.label || input.name || input.id || 'Unnamed input'} (${input.type})`;
-      inputsList.appendChild(inputItem);
-    });
-    
-    formItem.appendChild(title);
-    formItem.appendChild(inputsList);
-    
-    // Add click handler to select this form
-    formItem.addEventListener('click', function() {
-      document.querySelectorAll('.form-item').forEach(item => item.classList.remove('selected'));
-      this.classList.add('selected');
-      formData.dataset.selectedForm = this.dataset.formIndex;
-    });
-    
-    formsList.appendChild(formItem);
-  });
-}
-
-// Handle form filling request
-async function handleFormFill() {
-  const selectedFormIndex = formData.dataset.selectedForm;
-  const userFormData = formData.value.trim();
-  
-  if (!selectedFormIndex) {
-    alert('Please select a form first');
-    return;
-  }
-  
-  if (!userFormData) {
-    alert('Please enter form data');
-    return;
-  }
-  
-  // Get the selected form
-  const form = pageData.forms[selectedFormIndex];
-  if (!form) return;
-  
-  try {
-    // First try to parse as JSON
-    let parsedData;
-    try {
-      parsedData = JSON.parse(userFormData);
-    } catch (e) {
-      // If not valid JSON, ask Ollama to interpret the user's description
-      const formInfo = JSON.stringify(form);
-      const prompt = `I need to fill a form with the following fields:
-${formInfo}
-
-The user has provided this description of the data to fill:
-"${userFormData}"
-
-Please convert this description into a valid JSON object that matches the form fields. For each field, provide a key-value pair where the key is either the name or id of the input. If a field is not mentioned, leave it out or set it to null.
-
-Respond with ONLY the JSON object and nothing else.`;
-      
-      const response = await sendToOllama(prompt);
-      
-      // Try to extract JSON from the response
-      const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) || 
-                        response.match(/```\s*([\s\S]*?)\s*```/) ||
-                        response.match(/(\{[\s\S]*\})/);
-      
-      if (jsonMatch && jsonMatch[1]) {
-        try {
-          parsedData = JSON.parse(jsonMatch[1].trim());
-        } catch (e) {
-          throw new Error('Could not parse the AI-generated JSON');
-        }
-      } else {
-        throw new Error('AI did not generate valid JSON');
-      }
-    }
-    
-    // Generate the form-filling script
-    const script = generateFormFillScript(form, parsedData);
-    
-    // Send to content script for execution
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, {
-        action: 'executeScript',
-        script: script,
-        data: parsedData
-      }, function(response) {
-        if (chrome.runtime.lastError) {
-          alert('Error: ' + chrome.runtime.lastError.message);
-        } else if (response && response.success) {
-          alert('Form filled successfully!');
-        } else {
-          alert('Error filling form: ' + (response?.error || 'Unknown error'));
-        }
-      });
-    });
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
-}
-
-// Generate a script to fill a form
-function generateFormFillScript(form, data) {
-  return `
-    // Find the form
-    let targetForm = document.forms['${form.id}'];
-    if (!targetForm && '${form.id}'.startsWith('form-')) {
-      // Try to find by index
-      const formIndex = parseInt('${form.id}'.replace('form-', ''));
-      if (!isNaN(formIndex) && formIndex >= 0 && formIndex < document.forms.length) {
-        targetForm = document.forms[formIndex];
-      }
-    }
-    
-    if (!targetForm) {
-      throw new Error('Form not found');
-    }
-    
-    // Fill the form fields
-    Object.keys(data).forEach(key => {
-      // Skip null/undefined values
-      if (data[key] === null || data[key] === undefined) return;
-      
-      // Try to find the input by name or id
-      let input = targetForm.elements[key] || 
-                  targetForm.querySelector(\`[name="\${key}"]\`) || 
-                  targetForm.querySelector(\`#\${key}\`);
-      
-      if (!input) {
-        // Try case-insensitive matching for labels
-        const labels = Array.from(targetForm.querySelectorAll('label'));
-        for (const label of labels) {
-          if (label.textContent.toLowerCase().includes(key.toLowerCase())) {
-            const inputId = label.getAttribute('for');
-            if (inputId) {
-              input = targetForm.querySelector(\`#\${inputId}\`);
-              if (input) break;
-            }
-          }
-        }
-      }
-      
-      if (input) {
-        const value = data[key];
-        
-        switch (input.type) {
-          case 'checkbox':
-            input.checked = !!value;
-            break;
-          case 'radio':
-            // Find radio button with matching value
-            const radioGroup = targetForm.querySelectorAll(\`[name="\${input.name}"]\`);
-            radioGroup.forEach(radio => {
-              if (radio.value === value.toString()) {
-                radio.checked = true;
-              }
-            });
-            break;
-          case 'select-one':
-          case 'select-multiple':
-            // Handle select dropdowns
-            Array.from(input.options).forEach(option => {
-              if (option.value === value.toString() || option.text === value.toString()) {
-                option.selected = true;
-              }
-            });
-            break;
-          default:
-            // Text inputs, textareas, etc.
-            input.value = value;
-            break;
-        }
-        
-        // Trigger change event
-        const event = new Event('change', { bubbles: true });
-        input.dispatchEvent(event);
-        
-        // For inputs that need user typing simulation, also trigger input event
-        if (input.type === 'text' || input.type === 'textarea' || input.type === 'password' || input.type === 'email') {
-          const inputEvent = new Event('input', { bubbles: true });
-          input.dispatchEvent(inputEvent);
-        }
-      }
-    });
-    
-    return true;
-  `;
 }

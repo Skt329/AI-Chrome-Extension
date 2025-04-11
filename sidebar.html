@@ -12,7 +12,6 @@
       <h1>Ollama Web Assistant</h1>
       <div class="mode-selector">
         <button id="mode-chat" class="mode-btn active">Chat</button>
-        <button id="mode-form" class="mode-btn">Form Fill</button>
         <button id="mode-settings" class="mode-btn">Settings</button>
       </div>
       <button id="close-sidebar-btn" class="close-btn" title="Close sidebar">×</button>
@@ -24,25 +23,6 @@
       <div class="input-container">
         <textarea id="user-input" placeholder="Ask a question about this page..."></textarea>
         <button id="send-btn">Send</button>
-      </div>
-    </div>
-    
-
-    
-    <!-- Form Fill Panel -->
-    <div id="form-fill-panel" class="panel">
-      <div class="form-fill-container">
-        <div class="section">
-          <h2>Forms Detected</h2>
-          <div id="forms-list" class="content-box"></div>
-        </div>
-        <div class="section">
-          <h2>Fill Form</h2>
-          <div class="form-data-input">
-            <textarea id="form-data" placeholder="Enter form data (JSON or description)"></textarea>
-            <button id="fill-form-btn">Fill Form</button>
-          </div>
-        </div>
       </div>
     </div>
     
