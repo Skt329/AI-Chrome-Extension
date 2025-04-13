@@ -10,7 +10,7 @@
   /* Theme variables */
   --bg-color: #ffffff;
   --text-color: #1f2937;
-  --card-bg: #ffffff;
+  --card-bg: rgba(0, 0, 0, 0.1);
   --input-bg: #f9fafb;
   --shadow-color: rgba(0, 0, 0, 0.1);
 
@@ -69,15 +69,14 @@ body.dark-theme {
   background: var(--gradient-primary);
   color: white;
   margin-top: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  
   position: relative;
   display: flex;
   flex-direction: column;
 }
 
 .header h1 {
-  font-size: 20px;
+  font-size: 15px;
   margin: 0 0 16px 0;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -152,9 +151,9 @@ body.dark-theme {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background-color: var(--card-bg);
-  border-radius: 12px;
-  border: 2px solid var(--border-color);
+  
+  
+  
   box-shadow: 0 4px 6px -1px var(--shadow-color);
   margin: 16px;
   display: flex;
@@ -162,7 +161,7 @@ body.dark-theme {
   gap: 20px;
   scroll-behavior: smooth;
   min-height: 0;
-  align-items: center;
+  
 
   /* Hide scrollbar */
   scrollbar-width: none;
@@ -226,15 +225,15 @@ body.dark-theme {
 }
 
 .user-message {
-  background: black;
-  color: white;
+  background-color: var(--card-bg);
+
   align-self: flex-end;
   margin-left: auto;
   border: none;
 }
 
 .assistant-message {
-  background-color: var(--card-bg);
+  
   align-self: flex-start;
   border: 1px solid var(--border-color);
   color: var(--text-color);
@@ -242,10 +241,10 @@ body.dark-theme {
 
 .input-container {
   display: flex;
-  padding: 16px;
+  padding: 7px 16px 16px;
   gap: 12px;
-  background-color: var(--bg-color);
-  border-top: 1px solid var(--border-color);
+  
+  border:  var(--border-color);
   overflow-y: auto;
 }
 
@@ -451,9 +450,7 @@ body.dark-theme {
   gap: 10px;
 }
 
-.settings-page #connection-status {
-  font-size: 14px;
-}
+
 
 .settings-page .theme-settings {
   display: flex;
@@ -535,11 +532,7 @@ body.dark-theme {
   background-color: #616161;
 }
 
-.settings-page .footer {
-  text-align: center;
-  color: #666;
-  font-size: 12px;
-}
+
 
 .settings-page .footer a {
   color: #4285f4;
@@ -555,7 +548,7 @@ body.dark-theme {
   position: sticky;
   bottom: 0;
   background-color: var(--bg-color);
-  border-top: 1px solid var(--border-color);
+  
   z-index: 100;
 }
 
@@ -570,14 +563,13 @@ body.dark-theme {
 }
 
 #connection-status {
-  text-align: center;
-  padding: 8px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  
+  padding: 0 20px;
+  
 }
 
 #connection-status.connected {
-  background-color: rgba(52, 211, 153, 0.1);
+  
   color: var(--success-color);
 }
 
