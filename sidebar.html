@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/sidebar.css">
 </head>
 
-<body>
+<body class="settings-page">
   <div class="container">
     <div class="header">
       <h1>Phoenix Web Assistant</h1>
@@ -83,10 +83,11 @@
         </div>
       </div>
     </div>
-
-
   </div>
-  <script src="sidebar.js"></script>
+
+  <!-- Include marked.js before your custom script -->
+  <script src="libs/marked.min.js"></script>
+  <script type="module" src="sidebar.js"></script>
 </body>
 
 </html>

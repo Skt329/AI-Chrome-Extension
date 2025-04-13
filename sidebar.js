@@ -1,6 +1,9 @@
 // Add initial debug log to verify script is loaded
 console.log('[Sidebar] Script loading at', new Date().toISOString());
 
+if (typeof marked === 'undefined') {
+  console.error('[Sidebar] Error: marked.js is not loaded or defined');
+}
 // Initialize sidebar state
 let pageData = null;
 let chatHistory = [];
@@ -757,49 +760,31 @@ async function sendUserMessage() {
 
 // Add a message to the chat UI
 function addMessageToChat(role, content, messageId = null) {
-  // Create a unique ID if not provided
   const id = messageId || `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-  // Check if the message already exists (for streaming updates)
   let messageDiv = document.getElementById(id);
 
-  // If the message doesn't exist, create it
   if (!messageDiv) {
     messageDiv = document.createElement('div');
     messageDiv.id = id;
     messageDiv.classList.add('message', `${role}-message`);
-
-    // Add metadata for assistant messages when they're new
-    if (role === 'assistant' && !messageId) {
-      // Check if we're using webpage context
-      const hasContext = pageData &&
-        !pageData.url.includes('chrome-extension://') &&
-        pageData.content &&
-        pageData.content.length > 0;
-
-      if (hasContext) {
-        const metaDiv = document.createElement('div');
-        metaDiv.className = 'message-meta';
-        metaDiv.innerHTML = `<small>Using context from: ${pageData.title}</small>`;
-        messageDiv.appendChild(metaDiv);
-      }
-    }
-
     chatMessages.appendChild(messageDiv);
   }
 
-  // Convert markdown-like text to HTML (simple version)
-  const formattedContent = content
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-    .replace(/`(.*?)`/g, '<code>$1</code>')
-    .replace(/\n/g, '<br>');
-
+  // Use marked.parse to parse Markdown content
+  const formattedContent = marked.parse(content);
   messageDiv.innerHTML = formattedContent;
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // Prevent auto-scrolling if the user is manually scrolling
+  if (isUserAtBottom()) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
 
   return id;
+}
+
+// Helper function to check if the user is at the bottom of the chat
+function isUserAtBottom() {
+  return chatMessages.scrollHeight - chatMessages.scrollTop <= chatMessages.clientHeight + 50;
 }
 
 // Add a "thinking" message with animation
@@ -830,28 +815,22 @@ function setupStreamListener() {
 
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.action === 'streamUpdate') {
-        console.log('[Sidebar] Stream update received', {
-          responseId: message.responseId,
-          textLength: message.text.length,
-          done: message.done
-        });
+        const { responseId, text, done } = message;
 
-        // Update the message with the streaming content
-        if (window.activeStreamResponses && window.activeStreamResponses[message.responseId]) {
-          const { messageId } = window.activeStreamResponses[message.responseId];
-          addMessageToChat('assistant', message.text, messageId);
+        if (window.activeStreamResponses && window.activeStreamResponses[responseId]) {
+          const { messageId } = window.activeStreamResponses[responseId];
+          addMessageToChat('assistant', text, messageId);
 
-          // If the stream is done, clean up the tracking
-          if (message.done) {
-            console.log('[Sidebar] Stream completed for', message.responseId);
-            window.activeStreamResponses[message.responseId].resolve(message.text);
-            delete window.activeStreamResponses[message.responseId];
+          // Only auto-scroll if the user is at the bottom
+          if (isUserAtBottom()) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
           }
-        } else {
-          console.warn('[Sidebar] Received stream update for unknown response ID:', message.responseId);
-        }
 
-        // We must return true to indicate we want to send a response asynchronously
+          if (done) {
+            window.activeStreamResponses[responseId].resolve(text);
+            delete window.activeStreamResponses[responseId];
+          }
+        }
         return true;
       }
     });

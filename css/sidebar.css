@@ -14,9 +14,6 @@
   --input-bg: #f9fafb;
   --shadow-color: rgba(0, 0, 0, 0.1);
   
-  /* Gradient colors */
-  --gradient-primary: linear-gradient(135deg, #6366f1, #8b5cf6);
-  --gradient-secondary: linear-gradient(135deg, #34d399, #3b82f6);
 }
 
 body {
@@ -70,7 +67,7 @@ body.dark-theme {
 .header {
   background: var(--gradient-primary);
   color: white;
-  padding: 16px 20px;
+  margin-top: 20px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
@@ -154,9 +151,9 @@ body.dark-theme {
   overflow-y: auto;
   padding: 20px;
   background-color: var(--card-bg);
-  border-radius: 12px 12px 0 0; /* Rounded only at top */
+  border-radius: 12px 12px 12px 12px; /* Rounded only at top */
   box-shadow: 0 4px 6px -1px var(--shadow-color);
-  margin: 16px 16px 0 16px; /* Remove bottom margin */
+  margin: 16px 16px 16px 16px; /* Remove bottom margin */
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -188,6 +185,27 @@ body.dark-theme {
   }
 }
 
+.message pre {
+  white-space: pre-wrap; /* Wrap long lines */
+  word-wrap: break-word; /* Break long words */
+  overflow-x: auto; /* Add horizontal scrolling for long lines */
+  background-color: var(--input-bg); /* Match the theme */
+  padding: 12px;
+  border-radius: 8px;
+  font-family: 'Courier New', Courier, monospace; /* Use monospace font for code */
+  font-size: 14px;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.message code {
+  background-color: var(--input-bg);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  color: var(--text-color);
+}
 .user-message {
   background: var(--gradient-primary);
   color: white;
@@ -256,6 +274,9 @@ body.dark-theme {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Gradient colors */
+  --gradient-primary: linear-gradient(135deg, #6366f1, #8b5cf6);
+  --gradient-secondary: linear-gradient(135deg, #34d399, #3b82f6);
 }
 
 #send-btn:hover {
@@ -269,13 +290,7 @@ body.dark-theme {
 
 /* Refresh Button Styling */
 .refresh-context-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 14px;
-  cursor: pointer;
+  
   transition: all 0.3s ease;
   font-weight: 500;
   display: flex;
@@ -292,75 +307,180 @@ body.dark-theme {
 .refresh-context-btn:active {
   transform: translateY(0);
 }
+/*
+.settings-page body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+  color: #333;
+}*/
 
-/* Settings Panel */
-.settings-container {
-  padding: 16px;
-  background-color: var(--card-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px var(--shadow-color);
+.settings-page .settings-container {
+  max-width: 800px;
+  
+  padding: 30px;
+  
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.settings-container h2 {
+.settings-page .header {
+  text-align: center;
+  
+}
+
+.settings-page .header h1 {
+  font-size: 24px;
+  color: #4285f4;
+}
+
+.settings-page .settings-section {
+  
+  padding: 20px;
+}
+
+.settings-page .settings-section h2 {
   font-size: 18px;
-  font-weight: 600;
-  color: var(--primary-color);
-  margin-bottom: 12px;
+  color: #333;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 5px;
+  margin-bottom: 15px;
 }
 
-.settings-container .form-group {
-  margin-bottom: 16px;
+.settings-page .form-group {
+  margin-bottom: 20px;
 }
 
-.settings-container label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-color);
-  margin-bottom: 8px;
+.settings-page label {
   display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
 }
 
-.settings-container input,
-.settings-container textarea {
+.settings-page input[type="text"],
+.settings-page textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   font-size: 14px;
-  color: var(--text-color);
-  background-color: var(--input-bg);
-  transition: border-color 0.3s ease;
+  box-sizing: border-box;
 }
 
-.settings-container input:focus,
-.settings-container textarea:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+.settings-page textarea {
+  resize: vertical;
 }
 
-.settings-container .actions {
+.settings-page .help-text {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #666;
+}
+
+.settings-page .connection-test {
   display: flex;
-  gap: 12px;
-  margin-top: 16px;
+  align-items: center;
+  gap: 10px;
 }
 
-.settings-container button {
-  background-color: var(--primary-color);
+.settings-page #connection-status {
+  font-size: 14px;
+}
+
+.settings-page .theme-settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-page .switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.settings-page .switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.settings-page .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 20px;
+}
+
+.settings-page .slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.settings-page input:checked + .slider {
+  background-color: #4285f4;
+}
+
+.settings-page input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.settings-page .actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.settings-page button {
+  padding: 10px 20px;
+  background-color: #4285f4;
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
+  border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s;
 }
 
-.settings-container button:hover {
-  background-color: var(--secondary-color);
+.settings-page button:hover {
+  background-color: #3367d6;
 }
 
-.settings-container button:active {
-  transform: translateY(1px);
+.settings-page #reset-btn {
+  background-color: #757575;
+}
+
+.settings-page #reset-btn:hover {
+  background-color: #616161;
+}
+
+.settings-page .footer {
+  text-align: center;
+  color: #666;
+  font-size: 12px;
+}
+
+.settings-page .footer a {
+  color: #4285f4;
+  text-decoration: none;
+}
+
+.settings-page .footer a:hover {
+  text-decoration: underline;
 }
 /* Fixed bottom section containing input and footer */
 .bottom-section {
