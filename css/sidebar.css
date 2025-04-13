@@ -154,6 +154,7 @@ body.dark-theme {
   padding: 20px;
   background-color: var(--card-bg);
   border-radius: 12px;
+  border: 2px solid var(--border-color);
   box-shadow: 0 4px 6px -1px var(--shadow-color);
   margin: 16px;
   display: flex;
