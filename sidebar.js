@@ -248,7 +248,7 @@ function initSettings() {
     ollamaHost: 'http://localhost:11434',
     ollamaModel: 'deepseek-r1:8b',
     systemPrompt: 'You are a helpful AI assistant integrated into a browser extension.'
-  }, function (items) {
+  }, async function (items) {
     if (chrome.runtime.lastError) {
       console.error('[Sidebar] Error retrieving settings:', chrome.runtime.lastError);
       return;
@@ -256,10 +256,21 @@ function initSettings() {
 
     // Populate settings form
     if (ollamaHostInput) ollamaHostInput.value = items.ollamaHost;
-    if (ollamaModelInput) ollamaModelInput.value = items.ollamaModel;
     if (systemPromptInput) systemPromptInput.value = items.systemPrompt;
 
     console.log('[Sidebar] Settings loaded:', items);
+
+    // Fetch available models and populate the dropdown
+    try {
+      const models = await fetchAvailableModels(items.ollamaHost);
+      populateModelDropdown(models, items.ollamaModel);
+    } catch (error) {
+      console.error('[Sidebar] Error fetching available models:', error);
+      const errorEl = document.createElement('div');
+      errorEl.className = 'context-notice error';
+      errorEl.innerHTML = `<i>Error fetching models: ${error.message}</i>`;
+      settingsPanel.appendChild(errorEl);
+    }
   });
 
   // Set up save settings button
@@ -267,7 +278,7 @@ function initSettings() {
     saveSettingsBtn.addEventListener('click', function () {
       const settings = {
         ollamaHost: ollamaHostInput ? ollamaHostInput.value.trim() : 'http://localhost:11434',
-        ollamaModel: ollamaModelInput ? ollamaModelInput.value.trim() : 'deepseek-r1:8b',
+        ollamaModel: ollamaModelInput ? ollamaModelInput.value : 'deepseek-r1:8b',
         systemPrompt: systemPromptInput ? systemPromptInput.value.trim() : 'You are a helpful AI assistant integrated into a browser extension.'
       };
 
@@ -276,32 +287,27 @@ function initSettings() {
       chrome.storage.sync.set(settings, function () {
         if (chrome.runtime.lastError) {
           console.error('[Sidebar] Error saving settings:', chrome.runtime.lastError);
-          // Show error message
           const errorEl = document.createElement('div');
           errorEl.className = 'context-notice error';
           errorEl.innerHTML = `<i>Error saving settings: ${chrome.runtime.lastError.message}</i>`;
           settingsPanel.appendChild(errorEl);
         } else {
           console.log('[Sidebar] Settings saved successfully');
-          // Update current settings
           ollamaSettings.host = settings.ollamaHost;
           ollamaSettings.model = settings.ollamaModel;
           ollamaSettings.systemPrompt = settings.systemPrompt;
 
-          // Show success message
           const successEl = document.createElement('div');
           successEl.className = 'context-notice success';
           successEl.innerHTML = '<i>Settings saved successfully!</i>';
           settingsPanel.appendChild(successEl);
 
-          // Remove success message after 3 seconds
           setTimeout(() => {
             if (successEl.parentNode) {
               successEl.parentNode.removeChild(successEl);
             }
           }, 3000);
 
-          // Test connection with new settings
           testOllamaConnection();
         }
       });
@@ -350,6 +356,51 @@ function initSettings() {
         });
     });
   }
+}
+
+// Fetch available models from Ollama API
+async function fetchAvailableModels(host) {
+  console.log('[Sidebar] Fetching available models from Ollama at', host);
+  const response = await fetch(`${host}/api/tags`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch models: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  if (!data.models || data.models.length === 0) {
+    throw new Error('No models available');
+  }
+
+  return data.models.map(model => model.name);
+}
+
+// Populate the model dropdown
+function populateModelDropdown(models, selectedModel) {
+  const modelDropdown = document.getElementById('ollama-model');
+  if (!modelDropdown) {
+    console.error('[Sidebar] Model dropdown element not found');
+    return;
+  }
+
+  // Clear existing options
+  modelDropdown.innerHTML = '';
+
+  // Add models as options
+  models.forEach(model => {
+    const option = document.createElement('option');
+    option.value = model;
+    option.textContent = model;
+    if (model === selectedModel) {
+      option.selected = true;
+    }
+    modelDropdown.appendChild(option);
+  });
+
+  console.log('[Sidebar] Model dropdown populated with models:', models);
 }
 
 // Set up event listeners for UI interactions

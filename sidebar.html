@@ -46,8 +46,10 @@
 
           <div class="form-group">
             <label for="ollama-model">Model:</label>
-            <input type="text" id="ollama-model" placeholder="deepseek-r1:8b">
-            <p class="help-text">The model to use for AI responses</p>
+            <select id="ollama-model">
+              <option value="" disabled>Loading models...</option>
+            </select>
+            <p class="help-text">Select the model to use for AI responses</p>
           </div>
 
           <div class="connection-test">

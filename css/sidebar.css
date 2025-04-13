@@ -359,6 +359,7 @@ body.dark-theme {
 
 }
 
+
 .settings-page .header h1 {
   font-size: 24px;
   color: #4285f4;
@@ -381,6 +382,38 @@ body.dark-theme {
   margin-bottom: 20px;
 }
 
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  appearance: none;
+  cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  outline: none;
+}
+
+.form-group .help-text {
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+}
 .settings-page label {
   display: block;
   margin-bottom: 5px;
@@ -390,11 +423,16 @@ body.dark-theme {
 .settings-page input[type="text"],
 .settings-page textarea {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  box-sizing: border-box;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
 }
 
 .settings-page textarea {
