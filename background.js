@@ -170,31 +170,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     // Return true to indicate we'll call sendResponse asynchronously
     return true;
     
-  } else if (request.action === 'closeSidebar') {
-    console.log('[Background] Request to close sidebar received');
-    
-    // Get current tab ID
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      if (!tabs || tabs.length === 0) {
-        console.error('[Background] No active tab found for closing sidebar');
-        sendResponse({success: false, error: 'No active tab found'});
-        return;
-      }
-      
-      const tabId = tabs[0].id;
-      console.log('[Background] Marking sidebar as closed for tab:', tabId);
-      
-      // Update our state tracking
-      sidebarStates[tabId] = false;
-      
-      // Note: Chrome Extensions API doesn't provide a direct way to close the sidebar
-      // The user will need to close it manually or use the browser's UI
-      // We can only track the state internally
-      
-      sendResponse({success: true, message: 'Sidebar state updated. Note: Chrome Extensions API does not allow programmatically closing the sidebar.'});
-    });
-    
-    return true; // Keep the messaging channel open for async response
   } else if (request.action === 'openSettings') {
     console.log('[Background] Opening settings page');
     // Open the settings page

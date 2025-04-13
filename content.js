@@ -24,41 +24,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       sendResponse({success: false, error: error.message});
     }
     return true; // Keep the messaging channel open for async response
-  } else if (request.action === 'summarize') {
-    console.log('[Content] Extracting webpage content for summarization');
-    try {
-      // Extract the webpage content
-      const pageContent = extractPageContent();
-      console.log('[Content] Content extracted successfully. Size:', JSON.stringify(pageContent).length);
-      
-      // Log detailed info about the extracted content
-      console.log('[Content] Page data details:');
-      console.log('  - URL:', pageContent.url);
-      console.log('  - Title:', pageContent.title);
-      console.log('  - Meta Description:', pageContent.metaDescription?.substring(0, 100) || 'None');
-      console.log('  - Content Length:', pageContent.content?.length || 0, 'characters');
-      console.log('  - Forms detected:', pageContent.forms?.length || 0);
-      
-      // Send the content to the background script
-      console.log('[Content] Sending content to background script with openSidebar action');
-      chrome.runtime.sendMessage({
-        action: 'openSidebar',
-        mode: 'summarize',
-        pageContent: pageContent
-      }, function(response) {
-        if (chrome.runtime.lastError) {
-          console.error('[Content] Error sending content to background:', chrome.runtime.lastError);
-          sendResponse({success: false, error: chrome.runtime.lastError.message});
-        } else {
-          console.log('[Content] Content sent to background successfully:', response);
-          sendResponse({success: true});
-        }
-      });
-    } catch (error) {
-      console.error('[Content] Error extracting page content:', error);
-      sendResponse({success: false, error: error.message});
-    }
-  } else if (request.action === 'executeScript') {
+  }  else if (request.action === 'executeScript') {
     console.log('[Content] Executing script on page for form filling');
     // Execute a script on the page (e.g., form filling)
     try {
