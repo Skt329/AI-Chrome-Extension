@@ -766,26 +766,53 @@ async function sendUserMessage() {
 
 // Add a message to the chat UI
 function addMessageToChat(role, content, messageId = null) {
-  const id = messageId || `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  let messageDiv = document.getElementById(id);
+    const id = messageId || `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    let messageDiv = document.getElementById(id);
 
-  if (!messageDiv) {
-    messageDiv = document.createElement('div');
-    messageDiv.id = id;
-    messageDiv.classList.add('message', `${role}-message`);
-    chatMessages.appendChild(messageDiv);
-  }
+    if (!messageDiv) {
+        messageDiv = document.createElement('div');
+        messageDiv.id = id;
+        messageDiv.classList.add('message', `${role}-message`);
+        chatMessages.appendChild(messageDiv);
+    }
 
-  // Use marked.parse to parse Markdown content
-  const formattedContent = marked.parse(content);
-  messageDiv.innerHTML = formattedContent;
+    // Use marked.parse to parse Markdown content
+    const formattedContent = marked.parse(content);
+    messageDiv.innerHTML = formattedContent;
 
-  // Prevent auto-scrolling if the user is manually scrolling
-  if (isUserAtBottom()) {
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
+    // If the role is assistant, append the copy icon after message streaming ends
+    if (role === 'assistant') {
+      // Append the copy icon only once
+      if (!messageDiv.querySelector('.copy-icon')) {
+          const copyIcon = document.createElement('span');
+          copyIcon.className = 'copy-icon';
+          copyIcon.title = 'Copy message';
+          copyIcon.innerHTML = '<i class="fas fa-copy"></i>';
+          messageDiv.appendChild(copyIcon);
 
-  return id;
+          copyIcon.addEventListener('click', function(e) {
+              e.stopPropagation();
+              // Copy the plain text of the message
+              navigator.clipboard.writeText(messageDiv.innerText)
+                .then(() => {
+                  copyIcon.title = 'Copied!';
+                  setTimeout(() => {
+                    copyIcon.title = 'Copy message';
+                  }, 2000);
+                })
+                .catch(err => {
+                  console.error('Failed to copy text: ', err);
+                });
+          });
+      }
+    }
+
+    // Auto-scroll only if the user is at the bottom
+    if (isUserAtBottom()) {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    return id;
 }
 
 // Helper function to check if the user is at the bottom of the chat
