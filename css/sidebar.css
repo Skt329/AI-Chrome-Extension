@@ -294,9 +294,9 @@ body.dark-theme {
 .settings-page .settings-container {
   max-width: 800px;
 
-  padding: 30px;
+  padding: 0 30px;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
 }
 
 .settings-page .header {
@@ -449,41 +449,52 @@ body.dark-theme {
   transform: translateX(20px);
 }
 
-.settings-page .actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.settings-page button {
+/* Styling for settings menu buttons */
+.settings-page button#test-connection-btn,
+.settings-page button#save-settings-btn,
+.settings-page button#reset-settings-btn {
+  border: none;
+  border-radius: 4px;
   padding: 10px 20px;
   font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background 0.3s ease, transform 0.2s ease;
 }
 
-.settings-page button:hover {
-  background-color: #3367d6;
+/* Test Connection Button */
+.settings-page button#test-connection-btn {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
 }
 
-.settings-page #reset-btn {
-  background-color: #757575;
+.settings-page button#test-connection-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
 }
 
-.settings-page #reset-btn:hover {
-  background-color: #616161;
+/* Save Settings Button */
+.settings-page button#save-settings-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.settings-page button#save-settings-btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+}
+
+/* Reset to Default Button */
+.settings-page button#reset-settings-btn {
+  background: #757575;
+  color: #fff;
+}
+
+.settings-page button#reset-settings-btn:hover {
+  transform: translateY(-2px);
+  background: #616161;
 }
 
 
-
-.settings-page .footer a {
-  color: #4285f4;
-  text-decoration: none;
-}
-
-.settings-page .footer a:hover {
-  text-decoration: underline;
-}
 
 /* Fixed bottom section containing input and footer */
 .bottom-section {
