@@ -66,15 +66,34 @@ body.dark-theme {
 }
 
 .header {
-  background: var(--gradient-primary);
-  color: white;
-  margin-top: 20px;
-  
-  position: relative;
   display: flex;
-  flex-direction: row;
-  padding: 0 30px;
-  justify-content: space-between;;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 40px;
+}
+
+.icon-bar {
+  display: flex;
+  gap: 15px;
+}
+
+.icon-button {
+  font-size: 1.6em;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.icon-button:hover {
+  opacity: 0.8;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .header h1 {
@@ -99,54 +118,6 @@ body.dark-theme {
   }
 }
 
-.mode-selector {
-  display: flex;
-  padding: 6px;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  backdrop-filter: blur(8px);
-  animation: fadeIn 0.5s ease-out;
-  justify-content: space-evenly;
-}
-
-.mode-btn {
-  background-color: transparent;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
-  position: relative;
-  overflow: hidden;
-}
-
-.mode-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-.mode-btn.active {
-  background-color: white;
-  color: var(--primary-color);
-  font-weight: 600;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-}
-
-.mode-btn.active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-primary);
-  opacity: 0.1;
-  z-index: -1;
-}
 
 /* Chat Panel */
 .messages-container {
@@ -318,34 +289,7 @@ body.dark-theme {
   transform: translateY(0);
 }
 
-/* Refresh Button Styling */
-.refresh-context-btn {
 
-  transition: all 0.3s ease;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 16px;
-}
-
-.refresh-context-btn:hover {
-  background-color: var(--secondary-color);
-  transform: translateY(-1px);
-}
-
-.refresh-context-btn:active {
-  transform: translateY(0);
-}
-
-/*
-.settings-page body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f5f5f5;
-  color: #333;
-}*/
 
 .settings-page .settings-container {
   max-width: 800px;
@@ -550,15 +494,7 @@ body.dark-theme {
   z-index: 100;
 }
 
-/* Footer */
-.footer {
-  background-color: var(--card-bg);
-  padding: 12px 20px;
-  font-size: 13px;
-  color: var(--text-color);
-  border-top: 1px solid var(--border-color);
-  backdrop-filter: blur(8px);
-}
+
 
 #connection-status {
   

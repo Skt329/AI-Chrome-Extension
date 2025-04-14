@@ -405,178 +405,133 @@ function populateModelDropdown(models, selectedModel) {
 
 // Set up event listeners for UI interactions
 function setupEventListeners() {
-  console.log('[Sidebar] Setting up event listeners');
+  console.log('[Sidebar] Setting up icon event listeners');
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const closeBtn = document.querySelector('.close-btn');
-    const container = document.querySelector('.container');
+  // Header icon based event listeners:
 
-    closeBtn.addEventListener('click', () => {
-      container.classList.add('hidden');
-      // Notify the background script to update the sidebar state
-      chrome.runtime.sendMessage({ action: 'closeSidebar' }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('[Sidebar] Error closing sidebar:', chrome.runtime.lastError.message);
-        } else {
-          console.log('[Sidebar] Sidebar close action sent successfully:', response);
+  // Refresh Icon: uses the same functionality as the previous refresh button
+  const refreshBtn = document.getElementById('refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async function () {
+      console.log('[Sidebar] Refresh icon clicked');
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = '<i class="fas fa-sync spin"></i>';
+
+      try {
+        const tabs = await new Promise((resolve) => {
+          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs));
+        });
+
+        if (!tabs || tabs.length === 0) {
+          throw new Error('No active tab found');
         }
-      });
-    });
-  });
 
-  try {
-    // Mode switching buttons
-    const modeBtnsElements = document.querySelectorAll('.mode-btn');
-    console.log('[Sidebar] Found', modeBtnsElements.length, 'mode buttons');
-
-    if (modeBtnsElements.length === 0) {
-      console.error('[Sidebar] No mode buttons found');
-    }
-
-    modeBtnsElements.forEach(btn => {
-      btn.addEventListener('click', function () {
-        const mode = this.id.replace('mode-', '');
-        console.log('[Sidebar] Mode button clicked:', mode);
-
-        // All modes including settings should be handled locally now
-        console.log('[Sidebar] Switching to mode:', mode);
-
-        switchToMode(mode);
-      });
-    });
-
-    // Add a refresh context button to the chat panel
-    const chatPanel = document.getElementById('chat-panel');
-    if (chatPanel && !document.getElementById('refresh-context-btn')) {
-      const refreshBtn = document.createElement('button');
-      refreshBtn.id = 'refresh-context-btn';
-      refreshBtn.className = 'refresh-context-btn';
-      refreshBtn.innerHTML = '<span "></span> Refresh Page Context';
-      refreshBtn.title = 'Get fresh context from the current page';
-
-      // Insert the button at the top of the chat panel
-      const messagesContainer = document.getElementById('chat-messages');
-      if (messagesContainer) {
-        chatPanel.insertBefore(refreshBtn, messagesContainer);
-      }
-
-      // Add event listener to the refresh button
-      refreshBtn.addEventListener('click', async function () {
-        console.log('[Sidebar] Refresh context button clicked');
-        refreshBtn.disabled = true;
-        refreshBtn.innerHTML = '<span class="icon spin">↻</span> Refreshing...';
-
-        try {
-          // Check if we're on a supported page
-          const tabs = await new Promise((resolve) => {
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => resolve(tabs));
-          });
-
-          if (!tabs || tabs.length === 0) {
-            throw new Error('No active tab found');
-          }
-
-          const tab = tabs[0];
-
-          // Check if we're on a page where content extraction is supported
-          if (!tab.url || tab.url.startsWith('chrome://') ||
+        const tab = tabs[0];
+        if (!tab.url || tab.url.startsWith('chrome://') ||
             tab.url.startsWith('chrome-extension://') ||
             tab.url.startsWith('about:')) {
-            throw new Error('Cannot extract content from this page type');
-          }
+          throw new Error('Cannot extract content from this page type');
+        }
 
-          // Try to fetch fresh page content
-          const freshPageData = await fetchPageContent();
+        const freshPageData = await fetchPageContent();
 
-          // Validate the returned data
-          if (!freshPageData || !freshPageData.url || !freshPageData.content) {
-            throw new Error('Received invalid page content');
-          }
+        if (!freshPageData || !freshPageData.url || !freshPageData.content) {
+          throw new Error('Received invalid page content');
+        }
 
-          console.log('[Sidebar] Successfully fetched fresh page data');
-          pageData = freshPageData;
+        console.log('[Sidebar] Successfully fetched fresh page data');
+        pageData = freshPageData;
+        chrome.storage.session.set({ pageContent: pageData }, () => {
+          console.log('[Sidebar] Saved freshly fetched page data to session storage');
+        });
 
-          // Store in session storage for future use
-          chrome.storage.session.set({ pageContent: pageData }, () => {
-            console.log('[Sidebar] Saved freshly fetched page data to session storage');
-          });
+        // Show success notice in chat messages
+        const noticeEl = document.createElement('div');
+        noticeEl.className = 'context-notice success';
+        noticeEl.innerHTML = `<i>Context updated from <b>${pageData.title}</b></i>`;
+        document.getElementById('chat-messages').appendChild(noticeEl);
 
-          // Show success message
-          const noticeEl = document.createElement('div');
-          noticeEl.className = 'context-notice success';
-          noticeEl.innerHTML = `<i>Context updated from <b>${pageData.title}</b></i>`;
-          messagesContainer.appendChild(noticeEl);
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-          refreshBtn.innerHTML = '<span class="icon">✓</span> Context Updated!';
-          setTimeout(() => {
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML = '<span class="icon">↻</span> Refresh Page Context';
-          }, 2000);
-
-        } catch (error) {
-          console.error('[Sidebar] Error refreshing context:', error);
-          refreshBtn.innerHTML = '<span class="icon">✗</span> Failed to Update';
-
-          // Format a user-friendly error message
-          let errorMessage = error.message || 'Unknown error';
-
-          // Provide more helpful messages for common errors
-          if (errorMessage.includes('chrome-extension') ||
+        refreshBtn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => {
+          refreshBtn.disabled = false;
+          refreshBtn.innerHTML = '<i class="fas fa-sync"></i>';
+        }, 2000);
+      } catch (error) {
+        console.error('[Sidebar] Error refreshing context:', error);
+        refreshBtn.innerHTML = '<i class="fas fa-times"></i>';
+        const errorEl = document.createElement('div');
+        errorEl.className = 'context-notice error';
+        let errorMessage = error.message || 'Unknown error';
+        if (errorMessage.includes('chrome-extension') ||
             errorMessage.includes('chrome://') ||
             errorMessage.includes('Cannot extract content')) {
-            errorMessage = 'Cannot extract content from extension pages or Chrome system pages';
-          } else if (errorMessage.includes('Failed to fetch') ||
+          errorMessage = 'Cannot extract content from extension pages or Chrome system pages';
+        } else if (errorMessage.includes('Failed to fetch') ||
             errorMessage.includes('Network error')) {
-            errorMessage = 'Network error: Make sure the page has fully loaded';
-          } else if (errorMessage.includes('script')) {
-            errorMessage = 'Permission error: Cannot access page content';
-          }
-
-          // Show error message in chat
-          const errorEl = document.createElement('div');
-          errorEl.className = 'context-notice error';
-          errorEl.innerHTML = `<i>Error updating context: ${errorMessage}</i>`;
-          messagesContainer.appendChild(errorEl);
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-          setTimeout(() => {
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML = '<span class="icon">↻</span> Refresh Page Context';
-          }, 2000);
+          errorMessage = 'Network error: Make sure the page has fully loaded';
+        } else if (errorMessage.includes('script')) {
+          errorMessage = 'Permission error: Cannot access page content';
         }
-      });
-    }
+        errorEl.innerHTML = `<i>Error updating context: ${errorMessage}</i>`;
+        document.getElementById('chat-messages').appendChild(errorEl);
 
-    // Send message button
-    const sendBtnElement = document.getElementById('send-btn');
-    if (!sendBtnElement) {
-      console.error('[Sidebar] Send button not found');
-    } else {
-      sendBtnElement.addEventListener('click', function () {
-        console.log('[Sidebar] Send button clicked');
-        sendUserMessage();
-      });
-    }
-
-    // Enter key in textarea
-    const userInputElement = document.getElementById('user-input');
-    if (!userInputElement) {
-      console.error('[Sidebar] User input element not found');
-    } else {
-      userInputElement.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          console.log('[Sidebar] Enter key pressed in input');
-          e.preventDefault();
-          sendUserMessage();
-        }
-      });
-    }
-
-    console.log('[Sidebar] Event listeners set up successfully');
-  } catch (error) {
-    console.error('[Sidebar] Error setting up event listeners:', error);
+        setTimeout(() => {
+          refreshBtn.disabled = false;
+          refreshBtn.innerHTML = '<i class="fas fa-sync"></i>';
+        }, 2000);
+      }
+    });
+  } else {
+    console.error('[Sidebar] Refresh icon not found');
   }
+
+  // Chat Icon: switch to chat mode
+  const chatBtn = document.getElementById('chat-btn');
+  if (chatBtn) {
+    chatBtn.addEventListener('click', function () {
+      console.log('[Sidebar] Chat icon clicked');
+      switchToMode('chat');
+    });
+  } else {
+    console.error('[Sidebar] Chat icon not found');
+  }
+
+  // Settings Icon: switch to settings panel
+  const settingsBtn = document.getElementById('settings-btn');
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', function () {
+      console.log('[Sidebar] Settings icon clicked');
+      switchToMode('settings');
+    });
+  } else {
+    console.error('[Sidebar] Settings icon not found');
+  }
+
+  // Other existing event listeners (e.g. sendBtn, user input) remain unchanged.
+  const sendBtnElement = document.getElementById('send-btn');
+  if (sendBtnElement) {
+    sendBtnElement.addEventListener('click', function () {
+      console.log('[Sidebar] Send button clicked');
+      sendUserMessage();
+    });
+  } else {
+    console.error('[Sidebar] Send button not found');
+  }
+
+  const userInputElement = document.getElementById('user-input');
+  if (userInputElement) {
+    userInputElement.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        console.log('[Sidebar] Enter key pressed in input');
+        e.preventDefault();
+        sendUserMessage();
+      }
+    });
+  } else {
+    console.error('[Sidebar] User input element not found');
+  }
+
+  console.log('[Sidebar] Icon event listeners set up successfully');
 }
 
 // Switch between different panels (chat, settings)

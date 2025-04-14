@@ -6,16 +6,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Include Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="css/sidebar.css">
 </head>
 
 <body class="settings-page">
   <div class="container">
     <div class="header">
-      <h1>Phoenix Web Assistant</h1>
-      <div class="mode-selector">
-        <button id="mode-chat" class="mode-btn active">Chat</button>
-        <button id="mode-settings" class="mode-btn">Settings</button>
+      <h1>Phoenix</h1>
+      <div class="icon-bar">
+        <span id="refresh-btn" class="icon-button" title="Refresh Page Context">
+          <i class="fas fa-sync"></i>
+        </span>
+        <span id="chat-btn" class="icon-button" title="Chat">
+          <i class="fas fa-comment"></i>
+        </span>
+        <span id="settings-btn" class="icon-button" title="Settings">
+          <i class="fas fa-cog"></i>
+        </span>
       </div>
     </div>
 
