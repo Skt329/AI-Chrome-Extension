@@ -1,6 +1,12 @@
 // Add initial debug log to verify script is loaded
 console.log('[Sidebar] Script loading at', new Date().toISOString());
 
+// At the top of the file, add a global flag to track if the user has refreshed page context
+let userContextActive = false;
+
+// Add a global flag to track if the no-context warning has been shown
+let noContextWarned = false;
+
 if (typeof marked === 'undefined') {
   console.error('[Sidebar] Error: marked.js is not loaded or defined');
 }
@@ -427,12 +433,7 @@ function setupEventListeners() {
         }
 
         const tab = tabs[0];
-        if (!tab.url || tab.url.startsWith('chrome://') ||
-            tab.url.startsWith('chrome-extension://') ||
-            tab.url.startsWith('about:')) {
-          throw new Error('Cannot extract content from this page type');
-        }
-
+        // Proceed to fetch new page content
         const freshPageData = await fetchPageContent();
 
         if (!freshPageData || !freshPageData.url || !freshPageData.content) {
@@ -441,6 +442,10 @@ function setupEventListeners() {
 
         console.log('[Sidebar] Successfully fetched fresh page data');
         pageData = freshPageData;
+        userContextActive = true;
+        // Reset the no-context warning flag so subsequent messages use context
+        noContextWarned = false;
+
         chrome.storage.session.set({ pageContent: pageData }, () => {
           console.log('[Sidebar] Saved freshly fetched page data to session storage');
         });
@@ -457,24 +462,12 @@ function setupEventListeners() {
           refreshBtn.innerHTML = '<i class="fas fa-sync"></i>';
         }, 2000);
       } catch (error) {
-        console.error('[Sidebar] Error refreshing context:', error);
+        console.error('[Sidebar] Error updating context:', error);
         refreshBtn.innerHTML = '<i class="fas fa-times"></i>';
         const errorEl = document.createElement('div');
         errorEl.className = 'context-notice error';
-        let errorMessage = error.message || 'Unknown error';
-        if (errorMessage.includes('chrome-extension') ||
-            errorMessage.includes('chrome://') ||
-            errorMessage.includes('Cannot extract content')) {
-          errorMessage = 'Cannot extract content from extension pages or Chrome system pages';
-        } else if (errorMessage.includes('Failed to fetch') ||
-            errorMessage.includes('Network error')) {
-          errorMessage = 'Network error: Make sure the page has fully loaded';
-        } else if (errorMessage.includes('script')) {
-          errorMessage = 'Permission error: Cannot access page content';
-        }
-        errorEl.innerHTML = `<i>Error updating context: ${errorMessage}</i>`;
+        errorEl.innerHTML = `<i>Error updating context: ${error.message}</i>`;
         document.getElementById('chat-messages').appendChild(errorEl);
-
         setTimeout(() => {
           refreshBtn.disabled = false;
           refreshBtn.innerHTML = '<i class="fas fa-sync"></i>';
@@ -656,109 +649,53 @@ async function sendUserMessage() {
 
   // Add user message to chat
   addMessageToChat('user', message);
-
-  // Clear input
   userInput.value = '';
 
-  // If we don't have page data or it's from the sidebar itself, try to fetch it
-  if (!pageData || pageData.url.includes('chrome-extension://')) {
-    console.warn('[Sidebar] No valid pageData available, attempting to fetch from active tab');
-    const freshPageData = await fetchPageContent();
-
-    if (freshPageData && !freshPageData.url.includes('chrome-extension://')) {
-      console.log('[Sidebar] Successfully fetched fresh page data from actual webpage');
-      pageData = freshPageData;
-
-      // Store in session storage for future use
-      chrome.storage.session.set({ pageContent: pageData }, () => {
-        console.log('[Sidebar] Saved freshly fetched page data to session storage');
-      });
-
-      // Show context notice
-      const noticeEl = document.createElement('div');
-      noticeEl.className = 'context-notice';
-      noticeEl.innerHTML = `<i>Context from <b>${pageData.title}</b> is now available</i>`;
-      chatMessages.appendChild(noticeEl);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    } else {
-      console.error('[Sidebar] Failed to get valid page content or got sidebar content');
-      // We'll send the message without webpage context
-      pageData = null;
-    }
+  if (!userContextActive) {
+    console.log('[Sidebar] No active page context. Sending message without webpage context.');
+    pageData = null;
   }
 
-  // Additional validation to prevent using sidebar as context
+  let prompt = '';
+  if (userContextActive && pageData &&
+    !pageData.url.includes('chrome-extension://') &&
+    !pageData.url.includes('chrome://')) {
+    let context = `URL: ${pageData.url}\nTitle: ${pageData.title}\n`;
+    if (pageData.metaDescription) {
+      context += `Description: ${pageData.metaDescription}\n`;
+    }
+    if (pageData.content && pageData.content.length > 0) {
+      const contentToInclude = pageData.content.substring(0, 4000);
+      context += `Content: ${contentToInclude}${pageData.content.length > 4000 ? '...' : ''}\n`;
+    }
+    prompt = `The following is information about the current webpage:\n${context}\nUser question: ${message}`;
+  } else {
+    if (!noContextWarned) {
+      // Only show the note once when no context is available
+      const noticeEl = document.createElement('div');
+      noticeEl.className = 'context-notice warning';
+      noticeEl.innerHTML = '<i>Note: No webpage context available. Tap the refresh button to update.</i>';
+      chatMessages.appendChild(noticeEl);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      noContextWarned = true;
+    }
+    prompt = `User question: ${message}`;
+  }
+
   if (pageData && pageData.url.includes('chrome-extension://')) {
     console.warn('[Sidebar] Detected sidebar URL in pageData, nullifying to prevent confusion');
     pageData = null;
   }
 
-  // Prepare context about the current page
-  let context = '';
-  let hasValidContext = false;
-
-  if (pageData && !pageData.url.includes('chrome-extension://') && !pageData.url.includes('chrome://')) {
-    console.log('[Sidebar] Adding page context to prompt, pageData:', pageData);
-    context = `URL: ${pageData.url}\nTitle: ${pageData.title}\n`;
-    if (pageData.metaDescription) {
-      context += `Description: ${pageData.metaDescription}\n`;
-    }
-    // Truncate content to a reasonable size
-    if (pageData.content && pageData.content.length > 0) {
-      console.log('[Sidebar] Content length:', pageData.content.length);
-      // Make sure we include a significant amount of content for context
-      const contentToInclude = pageData.content.substring(0, 4000);
-      context += `Content: ${contentToInclude}${pageData.content.length > 4000 ? '...' : ''}\n`;
-      console.log('[Sidebar] Added content to context, length:', contentToInclude.length);
-      hasValidContext = true;
-    } else {
-      console.error('[Sidebar] Page content is missing from pageData!');
-    }
-
-    // Add metadata about the page content
-    if (pageData.metaKeywords) {
-      context += `Keywords: ${pageData.metaKeywords}\n`;
-    }
-  } else {
-    console.warn('[Sidebar] No valid webpage context available');
-  }
-
-  // Create prompt for Ollama
-  let prompt = message;
-  if (hasValidContext && context) {
-    prompt = `The following is information about the current webpage:\n${context}\n\nUser question: ${message}`;
-  } else {
-    // Add a note in the UI that we're operating without webpage context
-    const noticeEl = document.createElement('div');
-    noticeEl.className = 'context-notice warning';
-    noticeEl.innerHTML = '<i>Note: No webpage context available for this question</i>';
-    chatMessages.appendChild(noticeEl);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-
-    // Use a simple prompt without webpage context
-    prompt = `User question: ${message}`;
-  }
-
-
-
-  // Add AI thinking message
   const thinkingId = 'thinking-' + Date.now();
   addThinkingMessage(thinkingId);
 
   try {
-    // Remove thinking message before starting streaming response
     removeThinkingMessage(thinkingId);
-
-    // Send request to Ollama via background script
-    // The response will be streamed and displayed incrementally
     const response = await sendToOllama(prompt);
-
-    // The message is already in the UI due to streaming
-    // Just save to chat history
     chatHistory.push({ role: 'user', content: message });
     chatHistory.push({ role: 'assistant', content: response });
   } catch (error) {
-    // Remove thinking message and show error
     removeThinkingMessage(thinkingId);
     addMessageToChat('assistant', `Error: ${error.message}. Please check if Ollama is running.`);
   }
@@ -766,53 +703,53 @@ async function sendUserMessage() {
 
 // Add a message to the chat UI
 function addMessageToChat(role, content, messageId = null) {
-    const id = messageId || `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    let messageDiv = document.getElementById(id);
+  const id = messageId || `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  let messageDiv = document.getElementById(id);
 
-    if (!messageDiv) {
-        messageDiv = document.createElement('div');
-        messageDiv.id = id;
-        messageDiv.classList.add('message', `${role}-message`);
-        chatMessages.appendChild(messageDiv);
-    }
+  if (!messageDiv) {
+    messageDiv = document.createElement('div');
+    messageDiv.id = id;
+    messageDiv.classList.add('message', `${role}-message`);
+    chatMessages.appendChild(messageDiv);
+  }
 
-    // Use marked.parse to parse Markdown content
-    const formattedContent = marked.parse(content);
-    messageDiv.innerHTML = formattedContent;
+  // Use marked.parse to parse Markdown content
+  const formattedContent = marked.parse(content);
+  messageDiv.innerHTML = formattedContent;
 
-    // If the role is assistant, append the copy icon after message streaming ends
-    if (role === 'assistant') {
-      // Append the copy icon only once
-      if (!messageDiv.querySelector('.copy-icon')) {
-          const copyIcon = document.createElement('span');
-          copyIcon.className = 'copy-icon';
-          copyIcon.title = 'Copy message';
-          copyIcon.innerHTML = '<i class="fas fa-copy"></i>';
-          messageDiv.appendChild(copyIcon);
+  // If the role is assistant, append the copy icon after message streaming ends
+  if (role === 'assistant') {
+    // Append the copy icon only once
+    if (!messageDiv.querySelector('.copy-icon')) {
+      const copyIcon = document.createElement('span');
+      copyIcon.className = 'copy-icon';
+      copyIcon.title = 'Copy message';
+      copyIcon.innerHTML = '<i class="fas fa-copy"></i>';
+      messageDiv.appendChild(copyIcon);
 
-          copyIcon.addEventListener('click', function(e) {
-              e.stopPropagation();
-              // Copy the plain text of the message
-              navigator.clipboard.writeText(messageDiv.innerText)
-                .then(() => {
-                  copyIcon.title = 'Copied!';
-                  setTimeout(() => {
-                    copyIcon.title = 'Copy message';
-                  }, 2000);
-                })
-                .catch(err => {
-                  console.error('Failed to copy text: ', err);
-                });
+      copyIcon.addEventListener('click', function (e) {
+        e.stopPropagation();
+        // Copy the plain text of the message
+        navigator.clipboard.writeText(messageDiv.innerText)
+          .then(() => {
+            copyIcon.title = 'Copied!';
+            setTimeout(() => {
+              copyIcon.title = 'Copy message';
+            }, 2000);
+          })
+          .catch(err => {
+            console.error('Failed to copy text: ', err);
           });
-      }
+      });
     }
+  }
 
-    // Auto-scroll only if the user is at the bottom
-    if (isUserAtBottom()) {
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+  // Auto-scroll only if the user is at the bottom
+  if (isUserAtBottom()) {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
 
-    return id;
+  return id;
 }
 
 // Helper function to check if the user is at the bottom of the chat
